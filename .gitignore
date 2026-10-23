@@ -3,5 +3,8 @@ node_modules
 next-env.d.ts
 *.tsbuildinfo
 samples/*.hwp
+samples/*.docx
+samples/*.doc
+samples/*.pdf
 samples/*.md
 !samples/README.md
