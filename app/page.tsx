@@ -7,6 +7,7 @@ import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
 import { ACCEPTED_FILES, importFile } from "@/lib/import/importFile";
 import { downloadBlob } from "@/lib/export/download";
+import FormatConvertDialog, { CONVERT_API_URL } from "./FormatConvertDialog";
 
 const STORAGE_KEY = "hwp-md-editor:document";
 const WELCOME = `# 환영합니다 👋
@@ -45,6 +46,7 @@ export default function EditorPage() {
   const [view, setView] = useState<ViewMode>("split");
   const [dragging, setDragging] = useState(false);
   const [saveFormat, setSaveFormat] = useState<SaveFormat>("md");
+  const [showConvert, setShowConvert] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -199,6 +201,12 @@ export default function EditorPage() {
           <button onClick={() => fileInputRef.current?.click()} title={ACCEPTED_FILES}>
             열기
           </button>
+          {/* 변환 서버 주소가 설정된 경우에만 보입니다. */}
+          {CONVERT_API_URL && (
+            <button onClick={() => setShowConvert(true)} title="원본 서식 그대로 PDF, DOCX 등으로 변환">
+              서식 유지 변환
+            </button>
+          )}
         </div>
 
         <div className="group save-group">
@@ -277,6 +285,8 @@ export default function EditorPage() {
         <span>{status}</span>
         <span>{text.length.toLocaleString()}자</span>
       </footer>
+
+      {showConvert && <FormatConvertDialog onClose={() => setShowConvert(false)} />}
 
       {dragging && <div className="drop-hint">여기에 파일을 놓으세요 (HWP, DOCX, DOC, PDF, MD)</div>}
     </div>

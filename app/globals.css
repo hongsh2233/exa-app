@@ -209,6 +209,55 @@ select {
   border-radius: 6px;
 }
 
+/* ---------- 서식 유지 변환 창 ---------- */
+.convert-dialog {
+  width: min(440px, calc(100vw - 32px));
+  padding: 20px;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.convert-dialog::backdrop {
+  background: rgb(0 0 0 / 40%);
+}
+
+.convert-dialog h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.convert-dialog label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 14px 0;
+  font-size: 14px;
+}
+
+.convert-dialog .hint {
+  margin: 8px 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.convert-status {
+  font-size: 14px;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ---------- 인쇄(PDF 저장) ---------- */
 .print-area {
   display: none;
