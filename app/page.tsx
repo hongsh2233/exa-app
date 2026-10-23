@@ -5,19 +5,38 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeRaw from "rehype-raw";
 import rehypeSanitize from "rehype-sanitize";
-import { hwpToMarkdown } from "@/lib/hwp/hwpToMarkdown";
+import { ACCEPTED_FILES, importFile } from "@/lib/import/importFile";
+import { downloadBlob } from "@/lib/export/download";
 
 const STORAGE_KEY = "hwp-md-editor:document";
 const WELCOME = `# 환영합니다 👋
 
 왼쪽에 **Markdown**을 쓰면 오른쪽에 미리보기가 나옵니다.
 
-- 위의 **열기** 버튼으로 \`.hwp\`(HWP 5.0) 또는 \`.md\` 파일을 불러올 수 있습니다.
+- **열기**: \`.hwp\`(HWP 5.0), \`.docx\`, \`.doc\`, \`.pdf\`, \`.md\` 파일을 Markdown으로 바꿔서 엽니다.
+- **저장**: MD, DOCX, DOC, PDF 중에서 골라 저장합니다.
 - 파일을 이 화면에 끌어다 놓아도 됩니다.
 - 작성한 내용은 브라우저에 자동 저장됩니다.
 `;
 
 type ViewMode = "split" | "edit" | "preview";
+type SaveFormat = "md" | "docx" | "doc" | "pdf";
+
+const SAVE_FORMATS: { value: SaveFormat; label: string }[] = [
+  { value: "md", label: "Markdown (.md)" },
+  { value: "docx", label: "Word (.docx)" },
+  { value: "doc", label: "Word 97-2003 (.doc)" },
+  { value: "pdf", label: "PDF (인쇄)" },
+];
+
+/** 미리보기와 인쇄용 화면에서 함께 쓰는 Markdown 표시 컴포넌트 */
+function MarkdownView({ text }: { text: string }) {
+  return (
+    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw, rehypeSanitize]}>
+      {text}
+    </ReactMarkdown>
+  );
+}
 
 export default function EditorPage() {
   const [text, setText] = useState(WELCOME);
@@ -25,9 +44,11 @@ export default function EditorPage() {
   const [status, setStatus] = useState("준비됨");
   const [view, setView] = useState<ViewMode>("split");
   const [dragging, setDragging] = useState(false);
+  const [saveFormat, setSaveFormat] = useState<SaveFormat>("md");
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const printRef = useRef<HTMLDivElement>(null); // 인쇄(PDF)와 DOC 저장에 쓰는 화면
 
   // 처음 열 때: 자동 저장된 내용이 있으면 불러오기
   useEffect(() => {
@@ -59,30 +80,41 @@ export default function EditorPage() {
   async function openFile(file: File) {
     const baseName = file.name.replace(/\.[^.]+$/, "");
     try {
-      if (/\.hwp$/i.test(file.name)) {
-        setStatus("HWP 변환 중...");
-        const bytes = new Uint8Array(await file.arrayBuffer());
-        const result = hwpToMarkdown(bytes);
-        setText(result.markdown);
-        setStatus(`HWP ${result.version} 문서를 변환했습니다 (섹션 ${result.sectionCount}개)`);
-      } else {
-        setText(await file.text());
-        setStatus(`${file.name} 파일을 열었습니다`);
-      }
+      setStatus(`${file.name} 변환 중...`);
+      const result = await importFile(file);
+      setText(result.markdown);
       setFileName(baseName);
+      setStatus(result.message);
     } catch (error) {
       setStatus(`❌ ${error instanceof Error ? error.message : "파일을 열 수 없습니다"}`);
     }
   }
 
-  function saveMarkdown() {
-    const blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `${fileName}.md`;
-    link.click();
-    URL.revokeObjectURL(link.href);
-    setStatus(`${fileName}.md 파일로 저장했습니다`);
+  async function save(format: SaveFormat = saveFormat) {
+    try {
+      if (format === "md") {
+        downloadBlob(new Blob([text], { type: "text/markdown;charset=utf-8" }), `${fileName}.md`);
+      } else if (format === "docx") {
+        setStatus("DOCX 만드는 중...");
+        const { markdownToDocx } = await import("@/lib/export/markdownToDocx");
+        downloadBlob(await markdownToDocx(text), `${fileName}.docx`);
+      } else if (format === "doc") {
+        const { htmlToDoc } = await import("@/lib/export/htmlToDoc");
+        downloadBlob(htmlToDoc(printRef.current?.innerHTML ?? "", fileName), `${fileName}.doc`);
+      } else {
+        // 브라우저 인쇄 창에서 "PDF로 저장"을 고르면 PDF 파일이 됩니다.
+        // 문서 제목을 잠시 파일 이름으로 바꿔 두면 PDF 기본 이름이 됩니다.
+        const originalTitle = document.title;
+        document.title = fileName;
+        window.print();
+        document.title = originalTitle;
+        setStatus("인쇄 창에서 대상을 \"PDF로 저장\"으로 선택하세요");
+        return;
+      }
+      setStatus(`${fileName}.${format} 파일로 저장했습니다`);
+    } catch (error) {
+      setStatus(`❌ 저장하지 못했습니다: ${error instanceof Error ? error.message : "알 수 없는 오류"}`);
+    }
   }
 
   function newDocument() {
@@ -133,7 +165,7 @@ export default function EditorPage() {
     }
     if ((event.ctrlKey || event.metaKey) && event.key === "s") {
       event.preventDefault();
-      saveMarkdown();
+      save(); // 선택한 형식으로 저장
     }
   }
 
@@ -164,9 +196,25 @@ export default function EditorPage() {
 
         <div className="group">
           <button onClick={newDocument}>새 문서</button>
-          <button onClick={() => fileInputRef.current?.click()}>열기 (.hwp / .md)</button>
-          <button className="primary" onClick={saveMarkdown}>
-            MD 저장
+          <button onClick={() => fileInputRef.current?.click()} title={ACCEPTED_FILES}>
+            열기
+          </button>
+        </div>
+
+        <div className="group save-group">
+          <select
+            value={saveFormat}
+            onChange={(event) => setSaveFormat(event.target.value as SaveFormat)}
+            aria-label="저장 형식"
+          >
+            {SAVE_FORMATS.map((format) => (
+              <option key={format.value} value={format.value}>
+                {format.label}
+              </option>
+            ))}
+          </select>
+          <button className="primary" onClick={() => save()}>
+            저장
           </button>
         </div>
 
@@ -191,7 +239,7 @@ export default function EditorPage() {
         <input
           ref={fileInputRef}
           type="file"
-          accept=".hwp,.md,.markdown,.txt"
+          accept={ACCEPTED_FILES}
           hidden
           onChange={(event) => {
             const file = event.target.files?.[0];
@@ -215,19 +263,22 @@ export default function EditorPage() {
         )}
         {view !== "edit" && (
           <article className="preview">
-            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw, rehypeSanitize]}>
-              {text}
-            </ReactMarkdown>
+            <MarkdownView text={text} />
           </article>
         )}
       </main>
+
+      {/* 화면에는 보이지 않고, 인쇄(PDF)할 때만 나타나는 영역 */}
+      <div ref={printRef} className="print-area" aria-hidden>
+        <MarkdownView text={text} />
+      </div>
 
       <footer className="status">
         <span>{status}</span>
         <span>{text.length.toLocaleString()}자</span>
       </footer>
 
-      {dragging && <div className="drop-hint">여기에 파일을 놓으세요 (.hwp / .md)</div>}
+      {dragging && <div className="drop-hint">여기에 파일을 놓으세요 (HWP, DOCX, DOC, PDF, MD)</div>}
     </div>
   );
 }

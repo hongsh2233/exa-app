@@ -199,6 +199,66 @@ button.active {
   pointer-events: none;
 }
 
+select {
+  padding: 6px 8px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+/* ---------- 인쇄(PDF 저장) ---------- */
+.print-area {
+  display: none;
+}
+
+@media print {
+  @page {
+    margin: 20mm;
+  }
+
+  /* 인쇄할 때는 편집기 화면을 숨기고 문서 내용(.print-area)만 보여줍니다. */
+  .app {
+    display: block;
+    height: auto;
+  }
+
+  .app > :not(.print-area) {
+    display: none !important;
+  }
+
+  .print-area {
+    display: block;
+    color: #000;
+    line-height: 1.7;
+  }
+
+  html,
+  body {
+    height: auto;
+    background: #fff;
+  }
+
+  .print-area table {
+    border-collapse: collapse;
+    margin: 12px 0;
+  }
+
+  .print-area th,
+  .print-area td {
+    padding: 4px 10px;
+    border: 1px solid #999;
+    vertical-align: top;
+  }
+
+  .print-area tr,
+  .print-area img {
+    break-inside: avoid;
+  }
+}
+
 /* ---------- 휴대폰 화면 ---------- */
 @media (max-width: 720px) {
   .panes.split {
