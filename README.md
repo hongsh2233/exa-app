@@ -40,11 +40,18 @@ npm test        # samples 폴더의 .hwp / .docx / .doc를 .md로 변환해 보�
 | DOC | Word가 열 수 있는 HTML 기반 `.doc` 파일 (Word에서 "형식이 다르다"는 안내가 나오면 "예"를 누르세요) |
 | PDF | 브라우저 인쇄 창이 열리면 대상을 **"PDF로 저장"**으로 선택 (한글 글꼴이 깨지지 않고 글자 선택 가능) |
 
+## 서식 유지 변환 (변환 서버)
+
+편집기의 변환은 Markdown을 거치기 때문에 글꼴, 색, 정렬 같은 서식이 사라집니다.
+원본 모양 그대로 HWP → PDF/DOCX 등으로 바꾸려면 [변환 서버](server/README.md)(LibreOffice + H2Orestart)를 함께 배포하세요.
+Vercel 환경 변수 `NEXT_PUBLIC_CONVERT_API_URL`에 서버 주소를 넣으면 도구 모음에 **서식 유지 변환** 버튼이 나타납니다.
+
 ## 폴더 구조
 
 ```
 app/
   page.tsx                편집기 화면 (React)
+  FormatConvertDialog.tsx "서식 유지 변환" 창
   layout.tsx              HTML 기본 틀
   globals.css             디자인 (다크 모드, 휴대폰 화면, 인쇄 포함)
 lib/hwp/
@@ -60,6 +67,8 @@ lib/export/
   markdownToDocx.ts       Markdown → DOCX (docx)
   htmlToDoc.ts            HTML → DOC
   download.ts             파일 내려받기
+server/                   서식 유지 변환 서버 (Docker, Render 배포용)
+render.yaml               Render 배포 설정
 scripts/
   test-convert.ts         변환 테스트 스크립트
 samples/                  테스트용 문서를 넣는 폴더 (저장소에는 미포함)

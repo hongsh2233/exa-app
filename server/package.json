@@ -1,0 +1,11 @@
+{
+  "name": "exa-convert-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LibreOffice + H2Orestart로 HWP/DOC/DOCX를 서식 그대로 PDF/DOCX로 변환하는 서버",
+  "license": "MIT",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
