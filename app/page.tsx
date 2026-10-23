@@ -80,8 +80,11 @@ export default function EditorPage() {
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = `${fileName}.md`;
+    document.body.appendChild(link);
     link.click();
-    URL.revokeObjectURL(link.href);
+    link.remove();
+    // 다운로드가 시작될 시간을 준 뒤에 정리합니다. 바로 정리하면 파일 이름이 사라집니다.
+    setTimeout(() => URL.revokeObjectURL(link.href), 1000);
     setStatus(`${fileName}.md 파일로 저장했습니다`);
   }
 
