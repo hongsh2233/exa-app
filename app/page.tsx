@@ -8,6 +8,7 @@ import rehypeSanitize from "rehype-sanitize";
 import { ACCEPTED_FILES, importFile } from "@/lib/import/importFile";
 import { downloadBlob } from "@/lib/export/download";
 import FormatConvertDialog, { CONVERT_API_URL } from "./FormatConvertDialog";
+import BatchConvertDialog from "./BatchConvertDialog";
 
 const STORAGE_KEY = "hwp-md-editor:document";
 const WELCOME = `# 환영합니다 👋
@@ -16,7 +17,8 @@ const WELCOME = `# 환영합니다 👋
 
 - **열기**: \`.hwp\`(HWP 5.0), \`.docx\`, \`.doc\`, \`.pdf\`, \`.md\` 파일을 Markdown으로 바꿔서 엽니다.
 - **저장**: MD, DOCX, DOC, PDF 중에서 골라 저장합니다.
-- 파일을 이 화면에 끌어다 놓아도 됩니다.
+- **일괄 MD 변환**: 여러 파일을 한 번에 Markdown으로 바꿔 ZIP으로 저장합니다.
+- 파일을 이 화면에 끌어다 놓아도 됩니다. (여러 개를 놓으면 일괄 MD 변환)
 - 작성한 내용은 브라우저에 자동 저장됩니다.
 `;
 
@@ -47,6 +49,7 @@ export default function EditorPage() {
   const [dragging, setDragging] = useState(false);
   const [saveFormat, setSaveFormat] = useState<SaveFormat>("md");
   const [showConvert, setShowConvert] = useState(false);
+  const [batchFiles, setBatchFiles] = useState<File[] | null>(null); // 값이 있으면 "일괄 MD 변환" 창을 띄웁니다.
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -184,8 +187,10 @@ export default function EditorPage() {
       onDrop={(event) => {
         event.preventDefault();
         setDragging(false);
-        const file = event.dataTransfer.files[0];
-        if (file) openFile(file);
+        // 파일 하나는 편집기에서 열고, 여러 개면 "일괄 MD 변환" 창으로 보냅니다.
+        const files = Array.from(event.dataTransfer.files);
+        if (files.length > 1) setBatchFiles(files);
+        else if (files[0]) openFile(files[0]);
       }}
     >
       <header className="toolbar">
@@ -200,6 +205,9 @@ export default function EditorPage() {
           <button onClick={newDocument}>새 문서</button>
           <button onClick={() => fileInputRef.current?.click()} title={ACCEPTED_FILES}>
             열기
+          </button>
+          <button onClick={() => setBatchFiles([])} title="여러 파일을 한 번에 MD로 변환해 ZIP으로 저장">
+            일괄 MD 변환
           </button>
           {/* 변환 서버 주소가 설정된 경우에만 보입니다. */}
           {CONVERT_API_URL && (
@@ -287,8 +295,9 @@ export default function EditorPage() {
       </footer>
 
       {showConvert && <FormatConvertDialog onClose={() => setShowConvert(false)} />}
+      {batchFiles && <BatchConvertDialog initialFiles={batchFiles} onClose={() => setBatchFiles(null)} />}
 
-      {dragging && <div className="drop-hint">여기에 파일을 놓으세요 (HWP, DOCX, DOC, PDF, MD)</div>}
+      {dragging && <div className="drop-hint">여기에 파일을 놓으세요 (HWP, DOCX, DOC, PDF, MD · 여러 개면 일괄 MD 변환)</div>}
     </div>
   );
 }

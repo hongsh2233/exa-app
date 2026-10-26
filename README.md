@@ -2,6 +2,8 @@
 
 HWP, DOCX, DOC, PDF 문서를 Markdown으로 바꿔서 편집하고, MD / DOCX / DOC / PDF로 저장하는 Next.js 웹 앱입니다.
 
+작업 이력은 [docs/HISTORY.md](docs/HISTORY.md), 프로그램 구조는 [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md)에 정리되어 있습니다.
+
 ## 실행 방법
 
 ```bash
@@ -16,6 +18,7 @@ npm test        # samples 폴더의 .hwp / .docx / .doc를 .md로 변환해 보�
 - **저장**: Markdown(.md), Word(.docx), Word 97-2003(.doc), PDF 중 선택 (Ctrl+S)
 - 서식 버튼: 제목, 굵게, 기울임, 목록, 링크, 표
 - 화면 모드: 편집 / 나란히 / 미리보기
+- **일괄 MD 변환**: 여러 파일을 골라(또는 여러 개를 끌어다 놓아) 한 번에 Markdown으로 바꾸고 ZIP 하나로 저장. 실패한 파일은 이유를 보여주고 나머지는 계속 변환
 - 파일을 화면에 끌어다 놓아서 열기
 - 브라우저에 자동 저장
 - 변환은 **브라우저 안에서만** 일어나서 파일이 서버로 전송되지 않음
@@ -52,6 +55,7 @@ Vercel 환경 변수 `NEXT_PUBLIC_CONVERT_API_URL`에 서버 주소를 넣으면
 app/
   page.tsx                편집기 화면 (React)
   FormatConvertDialog.tsx "서식 유지 변환" 창
+  BatchConvertDialog.tsx  "일괄 MD 변환" 창
   layout.tsx              HTML 기본 틀
   globals.css             디자인 (다크 모드, 휴대폰 화면, 인쇄 포함)
 lib/hwp/
@@ -59,6 +63,7 @@ lib/hwp/
   hwpToMarkdown.ts        HWP → Markdown
 lib/import/
   importFile.ts           확장자에 맞는 변환기 고르기
+  batchToMarkdown.ts      여러 파일 → Markdown → ZIP (fflate)
   docxToMarkdown.ts       DOCX → Markdown (mammoth + turndown)
   docToMarkdown.ts        DOC → Markdown (직접 구현)
   pdfToMarkdown.ts        PDF → Markdown (pdf.js)
