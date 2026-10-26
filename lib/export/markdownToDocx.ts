@@ -146,7 +146,8 @@ class DocxConverter {
       rows: node.children.map(
         (row, rowIndex) =>
           new TableRow({
-            tableHeader: rowIndex === 0,
+            // 첫 줄만 제목 줄로 표시합니다. false를 넘기면 "off" 표시가 남아, 일부 프로그램(mammoth)이 모든 줄을 제목 줄로 읽습니다.
+            tableHeader: rowIndex === 0 || undefined,
             children: row.children.map(
               (cell) =>
                 new TableCell({

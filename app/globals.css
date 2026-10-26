@@ -246,6 +246,39 @@ select {
   font-size: 14px;
 }
 
+/* 일괄 MD 변환: 고른 파일과 결과 목록 */
+.batch-list {
+  max-height: 240px;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.batch-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 10px;
+  font-size: 13px;
+  word-break: break-all;
+  border-bottom: 1px solid var(--border);
+}
+
+.batch-list li:last-child {
+  border-bottom: none;
+}
+
+.batch-list .batch-result {
+  color: var(--muted);
+}
+
+.batch-list li.failed .batch-result {
+  color: #d33;
+}
+
 .dialog-actions {
   display: flex;
   justify-content: flex-end;
